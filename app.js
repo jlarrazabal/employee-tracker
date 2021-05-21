@@ -15,58 +15,6 @@ const connection = mysql.createConnection({
   database: 'employees_db'
 });
 
-// connection.connect(function(err){
-//   if(err){
-//     console.log(err);
-//   } else {
-//     console.log("connection with the employees_db succesful!");
-//   }
-// });
-//
-//
-// connection.end(function(err){
-//   if(err){
-//     console.log(err);
-//   } else {
-//     console.log("Connection with employees_db has ended!");
-//   }
-// });
-
-// connection.destroy(); // NOTE: Confirm what method is prefered the end or destroy method to close the connection with the database.
-
-
-//Global Variables:
-// const whatToDoQuestion = [{
-//   type: "list",
-//   name: "whatToDo",
-//   message: "What would you like todo?",
-//   choices: ["Create a Department", "Create a Role", "Add an Employee", "Remove Employee", "Update Employee Role", "Update Employee Manager", "View all Employess", "View all Employees by Department", "View all Employees By Manager", "View the total utilized budget of a Department", "Exit"]
-// }];
-
-// const createDepartmentQuestion = [{
-//   type: "input",
-//   name: "departmentName",
-//   message: "What is the of the department?"
-// }];
-
-let createRoleQuestion = [{
-    type: "input",
-    name: "title",
-    message: "What is the title for the new role?"
-  },
-  {
-    type: "input",
-    name: "salary",
-    message: "What is the salary for the new role?"
-  },
-  {
-    type: "list",
-    name: "departmentName",
-    message: "To what department does the new role belong to?",
-    choices: []
-  }
-];
-
 const createEmployeeQuestion = [{
     type: "input",
     name: "firstName",
@@ -199,17 +147,22 @@ const createDepartment = function() {
     name: "departmentName",
     message: "What is the of the department?"
   }).then(function(answers) {
-    connection.query("INSERT INTO department SET ?", {
-      name: answers.departmentName
-    }, function(err, res) {
-      if (err) {
-        console.log(err);
-      } else {
-        console.log(`The new department "${answers.departmentName}" has been created successfully!`);
-        toDo();
-        // connection.end();
-      }
-    });
+    if(answers.departmentName ==="") {
+      console.log("Department name cannot be empty, please try again");
+      createDepartment();
+    } else {
+      connection.query("INSERT INTO department SET ?", {
+        name: answers.departmentName
+      }, function(err, res) {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log(`The new department "${answers.departmentName}" has been created successfully!`);
+          toDo();
+          // connection.end();
+        }
+      });
+    }
   });
 };
 
@@ -219,9 +172,9 @@ const createRole = function() {
     if (err) {
       console.log(err);
     } else {
-      console.log(data);
+      // console.log(data);
       const departmentList = data.map(data => data.name);
-      console.log(departmentList);
+      // console.log(departmentList);
       inquirer.prompt([{
           type: "input",
           name: "title",
@@ -239,26 +192,127 @@ const createRole = function() {
           choices: departmentList
         }]
       ).then(function(answers) {
-        let dept = data.find(d=>d.name === answers.departmentName);
-        console.log(dept);
-        connection.query("INSERT INTO role SET ?", {
-          title: answers.title,
-          salary: answers.salary,
-          department_id: dept.id
-        }, function(err, res) {
-          if (err) {
-            console.log(err);
-          } else {
-            console.log(`The new Role "${answers.title}" has been created successfully under the ${dept.name} department!`);
-            toDo();
-          }
-        });
+        if(answers.title ===""||answers.salary===""||isNaN(answers.salary)) {
+          console.log("The information provided is incomplete or the salary provided for the new role was not a number, please try again.");
+          createRole();
+        } else {
+          let dept = data.find(item=>item.name === answers.departmentName);
+          // console.log(dept);
+          connection.query("INSERT INTO role SET ?", {
+            title: answers.title,
+            salary: answers.salary,
+            department_id: dept.id
+          }, function(err, res) {
+            if (err) {
+              console.log(err);
+            } else {
+              console.log(`The new Role "${answers.title}" has been created successfully under the ${dept.name} department!`);
+              toDo();
+            }
+          });
+        }
       });
     }
   });
 };
 
-// createEmployee();
+// Fuction to create an employee
+const createEmployee = function() {
+  connection.query("SELECT * FROM role", function(err, data) {
+    if (err) {
+      console.log(err);
+    } else {
+      // console.log(data);
+      const roleList = data.map(data => data.title);
+      // console.log(roleList);
+      inquirer.prompt([{
+          type: "input",
+          name: "firstName",
+          message: "What is the first name of the new employee?"
+        },
+        {
+          type: "input",
+          name: "lastName",
+          message: "What is the last name of the new employee?"
+        },
+        {
+          type: "list",
+          name: "roleName",
+          message: "What is the role of the new employee?",
+          choices: roleList
+        }]
+      ).then(function(answers) {
+        if(answers.firstName ===""||answers.lastName==="") {
+          console.log("The information provided is incomplete, please try again");
+          createEmployee();
+        } else {
+          let role = data.find(item=>item.title === answers.roleName);
+          // console.log(role);
+          connection.query("SELECT * FROM employee WHERE manager_id=0", function(err, managers){
+            if (err) {
+              console.log(err);
+            } else {
+              // console.log(managers);
+              const managerList = managers.map(manager => `${manager.first_name} ${manager.last_name}`);
+              inquirer.prompt([{
+                type: "list",
+                name: "isManager",
+                choices:["YES","NO"],
+                message: "Is the new employee a manager?"
+              }]).then(function(result){
+                if(result.isManager === "YES") {
+                  connection.query("INSERT INTO employee SET ?", {
+                    first_name: answers.firstName,
+                    last_name: answers.lastName,
+                    role_id: role.id,
+                    manager_id: 0
+                  }, function(err, res) {
+                    if (err) {
+                      console.log(err);
+                    } else {
+                      console.log(`The new employee "${answers.firstName} ${answers.lastName}" has been created successfully!`);
+                      toDo();
+                    }
+                  });
+                } else {
+                  inquirer.prompt([{
+                    type: "list",
+                    name: "managerName",
+                    choices: managerList,
+                    message: "What is the name of the manager?"
+                  }]).then(function(response){
+                    let managerNameArray = response.managerName.split(" ");
+                    // console.log(managerNameArray);
+                    connection.query(`SELECT id FROM employee WHERE first_name ='${managerNameArray[0]}' AND last_name ='${managerNameArray[1]}'`, function(err, mgrId){
+                      if(err){
+                        console.log(err);
+                      } else {
+                        // console.log(mgrId);
+                        connection.query("INSERT INTO employee SET ?", {
+                          first_name: answers.firstName,
+                          last_name: answers.lastName,
+                          role_id: role.id,
+                          manager_id: mgrId[0].id
+                        }, function(err, res) {
+                          if (err) {
+                            console.log(err);
+                          } else {
+                            console.log(`The new employee "${answers.firstName} ${answers.lastName}" has been created successfully!`);
+                            toDo();
+                          }
+                        });
+                      }
+                    });
+                  });
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+};
 //
 // removeEmployee();
 //
@@ -266,15 +320,33 @@ const createRole = function() {
 //
 // udateEmployeeManager();
 //
-// viewAllEmployees();
-//
+//Function to see all Employees including roles and departments;
+const viewAllEmployees = function() {
+  connection.query("SELECT * FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id", function(err, data){
+    if(err) {
+      console.log(err);
+    } else {
+      console.table(data);
+    }
+  });
+}
+
 // viewAllEmployeesByDepartment();
 //
 // viewAllEmployeesByManager();
 //
 // viewDepartmentBudget();
 //
-// exitApp();
+//Function to exit the App
+const exitApp = function() {
+  connection.end(function(){
+    console.log("Connection to the employees database has been terminated successfully. Thank you for using The Employee Tracker APP!")
+  })
+}
 
 //Initiating the App
-toDo();
+const init = function() {
+  viewAllEmployees();
+  setTimeout(()=>toDo(),500);
+};
+init();
