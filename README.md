@@ -17,8 +17,10 @@ Employee Tracker is an console application that allows to create departments, ro
 
 ## Usage:
 1. Fork the repository.
-2. Update the password in the connection object to the password that you use for MySQL.
-3. Run the application using "npm start" or "node app.js".
+2. Update the password ("your_password") in the connection object to the password that you use for MySQL.
+3. Run the schema.sql queries in MySQL to create the database and tables.
+4. Run the queries included in the seed.sql file to add test information to the data base.
+5. Run the application in the console with the "npm start" or "node app.js" commands.
 
 ## Walkthrough Video:
 https://drive.google.com/file/d/1Ji973UVD7KMwQezKaejhdBQZXnmAj770/view
