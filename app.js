@@ -11,7 +11,7 @@ const mysql = require('mysql');
 const connection = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "jeld1988*",
+  password: "your_password",
   database: 'employees_db'
 });
 
@@ -21,7 +21,7 @@ const toDo = function() {
     type: "list",
     name: "whatToDo",
     message: "What would you like todo?",
-    choices: ["Create a Department", "Create a Role", "Add an Employee", "Remove Employee", "Update Employee Role", "Update Employee Manager", "View all Employess", "View all Employees by Department", "View all Employees By Manager", "View the total utilized budget of a Department", "Exit"]
+    choices: ["Create a Department", "Create a Role", "Add an Employee", "Remove Employee", "Update Employee Role", "Update Employee Manager", "View all Employees", "View all Employees by Department", "View all Employees By Manager", "View the total utilized budget of a Department", "Exit"]
   }).then(function(answers) {
     switch (answers.whatToDo) {
       case "Create a Department":
@@ -42,7 +42,7 @@ const toDo = function() {
       case "Update Employee Manager":
         updateEmployeeManager();
         break;
-      case "View all Employess":
+      case "View all Employees":
         viewAllEmployees();
         break;
       case "View all Employees by Department":
